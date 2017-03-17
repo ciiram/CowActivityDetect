@@ -1,13 +1,30 @@
 import matplotlib.pyplot as plt
+import sys
 import numpy as np
 import accelFuncs
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import metrics
 from sklearn.metrics import pairwise_distances,accuracy_score
 from sklearn.cross_validation import KFold,train_test_split
+from tabulate import tabulate
+
+
+if len(sys.argv)!=3:
+	sys.exit("Usage: python activityDetect-v1.py [Cow/Human] [K]")
 
 np.random.seed(123)
-file1=open('HumanAccel',"r")
+
+if sys.argv[1]=='Human':
+	file1=open('HumanAccel',"r")
+	Activities=['HS','HW','HUS','HDS']
+elif sys.argv[1]=='Cow':
+	file1=open('CowAccel',"r")
+	Activities=['CE1','CE2','CS','CW']
+else:
+	sys.exit("Wrong Options Used. Usage: python activityDetect-v1.py [Cow/Human] [K]")
+	
+n_classes=len(Activities)
+K=int(sys.argv[2])
 
 
 files=[]
@@ -31,7 +48,7 @@ data=np.array([])
 seglabels=[]
 j=0
 
-neigh=KNeighborsClassifier(n_neighbors=10)
+neigh=KNeighborsClassifier(n_neighbors=K)
 for i in files:
 	A=np.genfromtxt(i)
 	F=accelFuncs.gen_features(A,blk_size)
@@ -56,7 +73,10 @@ for i in range(num_trials):
 	f1=np.vstack([f1,res]) if f1.size else res
 
 
+Prec=np.mean(precision,0)
+Rec=np.mean(recall,0)
 
-print 'Precision',np.mean(precision,0)
-print 'Recall',np.mean(recall,0)
-print 'F1',np.mean(f1,0)
+
+table=[[Activities[i],Prec[i],Rec[i]]  for i in range(n_classes)]
+headers=["Precision","Recall"]
+print tabulate(table, headers)
